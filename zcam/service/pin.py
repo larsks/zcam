@@ -59,8 +59,14 @@ class ExpiringBuffer(object):
         return self.getvalue()
 
 
-class PasscodeService(zcam.app.zmq.ZmqClientApp):
-    namespace = 'zcam.device.passcode'
+class PinService(zcam.app.zmq.ZmqClientApp):
+    '''Receive keystrokes from keypads and assemble them into PINs.
+
+    A PIN is sent to the message bus when the ENTER key on a keypad
+    is pressed.
+    '''
+
+    namespace = 'zcam.device.pin'
 
     def __init__(self, **kwargs):
         self.pads = defaultdict(self.buffermaker)
@@ -102,26 +108,26 @@ class PasscodeService(zcam.app.zmq.ZmqClientApp):
             if msg[b'keystate'] != b'up':
                 continue
 
-            LOG.debug('passcode %s received message %s',
+            LOG.debug('pin service %s received message %s',
                       self.name, tag)
 
             key = KEYMAP[msg[b'keycode']]
             keypad = msg[b'instance']
             if key == '\n':
-                self.handle_passcode(keypad)
+                self.handle_pin(keypad)
             else:
                 self.pads[keypad].append(key)
 
-    def handle_passcode(self, keypad):
-        passcode = str(self.pads[keypad])
+    def handle_pin(self, keypad):
+        pin = str(self.pads[keypad])
         self.pads[keypad].clear()
-        LOG.debug('passcode %s sending phrase %s',
-                  self.name, repr(passcode))
-        self.send_message('{}.passcode'.format(self.name),
+        LOG.debug('pin service %s sending pin %s',
+                  self.name, repr(pin))
+        self.send_message('{}'.format(self.name),
                           keypad=keypad,
-                          passcode=passcode)
+                          pin=pin)
 
 
 def main():
-    app = PasscodeService()
+    app = PinService()
     app.run()
