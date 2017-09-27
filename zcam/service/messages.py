@@ -1,11 +1,11 @@
 import logging
 
-import zcam.app
+import zcam.app.zmq
 
 LOG = logging.getLogger(__name__)
 
 
-class LogMessagesApp(zcam.app.ZmqClientApp):
+class LogMessagesApp(zcam.app.zmq.ZmqClientApp):
     def create_parser(self):
         p = super().create_parser()
         p.add_argument('subscription',

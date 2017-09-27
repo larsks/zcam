@@ -1,32 +1,29 @@
 import logging
 import zmq
 
-import zcam.app
+import zcam.app.zmq
 
 LOG = logging.getLogger(__name__)
 
 
-class ProxyApp(zcam.app.ZmqBaseApp):
+class ProxyApp(zcam.app.zmq.ZmqBaseApp):
+    namespace = 'zcam.service.proxy'
 
     def main(self):
-        LOG.info('pub socket is %s', self.puburi)
-        LOG.info('sub socket is %s', self.suburi)
         zmq.proxy(self.pub, self.sub)
 
-    @property
-    def puburi(self):
-        return self.config.get(self.name, 'pub_bind_uri')
-
-    @property
-    def suburi(self):
-        return self.config.get(self.name, 'sub_bind_uri')
-
     def create_sockets(self):
-        self.pub = self.ctx.socket(zmq.XPUB)
-        self.sub = self.ctx.socket(zmq.XSUB)
+        suburi = self.get('sub_bind_uri')
+        puburi = self.get('pub_bind_uri')
 
-        self.pub.bind(self.puburi)
-        self.sub.bind(self.suburi)
+        LOG.info('collecting messages on %s', suburi)
+        LOG.info('publishing messages on %s', puburi)
+
+        self.pub = self.ctx.socket(zmq.XPUB)
+        self.pub.bind(puburi)
+
+        self.sub = self.ctx.socket(zmq.XSUB)
+        self.sub.bind(suburi)
 
 
 def main():

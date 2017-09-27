@@ -2,24 +2,30 @@ import abc
 import argparse
 import configparser
 import logging
-import msgpack
-import zmq
 
 import zcam.config
 
 LOG = logging.getLogger(__name__)
+UNSET = object()
 
 
-class App(abc.ABC):
+def KeyValueArgument(value):
+    try:
+        k, v = value.split('=', 1)
+        return k, v
+    except ValueError:
+        raise argparse.ArgumentError('values must of the form <key>=<value>')
+
+
+class BaseApp(abc.ABC):
+    namespace = 'zcam'
 
     def __init__(self,
-                 name=None,
                  default_config_file=None,
                  default_config_values=None):
 
         self.default_config_file = default_config_file
         self.default_config_values = default_config_values
-        self.name = name if name is not None else self.qual_name
 
         self.parser = self.create_parser()
         self.config = self.create_config()
@@ -31,8 +37,42 @@ class App(abc.ABC):
         self.configure_logging()
 
     @property
-    def qual_name(self):
-        return self.__module__
+    def name(self):
+        return '.'.join(x for x in [self.namespace, self.args.instance]
+                        if x is not None)
+
+    def get(self, option, default=UNSET):
+        '''Resolve a configuration value.
+
+        Look for the named configuration value in the current section
+        section (determined by `self.name`) and in any superior
+        sections (determined by stripping dot-delimited components from
+        the section name).
+        '''
+
+        components = self.name.split('.')
+        hier = reversed([
+            '.'.join(components[:i + 1])
+            for i in range(len(components))
+        ])
+
+        for section in hier:
+            LOG.debug('looking for %s in %s', option, section)
+            try:
+                return self.config.get(section, option)
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                continue
+
+        if default is not UNSET:
+            return default
+        else:
+            raise KeyError(option)
+
+    def set(self, option, value):
+        return self.config.set(self.name, option, value)
+
+    def options(self):
+        return self.config.items(section=self.name)
 
     def configure_logging(self):
         logging.basicConfig(level=self.args.loglevel)
@@ -42,6 +82,13 @@ class App(abc.ABC):
         p.add_argument('--config-file', '-f',
                        default=[],
                        action='append')
+        p.add_argument('--option', '-o',
+                       action='append',
+                       type=KeyValueArgument,
+                       metavar='OPTION=VALUE',
+                       default=[])
+        p.add_argument('--instance',
+                       default='default')
 
         g = p.add_argument_group('Logging options')
         g.add_argument('--verbose', '-v',
@@ -86,56 +133,21 @@ class App(abc.ABC):
         self.create_required_sections()
 
     def apply_overrides(self):
-        for arg, section, option in self.overrides:
-            val = getattr(self.args, arg, None)
+        for option, value in self.args.option:
+            self.set(option, value)
+
+        for option in self.overrides:
+            val = getattr(self.args, option, None)
             if val is not None:
-                self.config.set(section, option, str(val))
+                self.set(option, str(val))
 
     @abc.abstractmethod
     def main(self):
         raise NotImplemented()
 
     def run(self):
+        LOG.info('starting %s', self.name)
         try:
             self.main()
         except KeyboardInterrupt:
             pass
-
-
-class ZmqBaseApp(App):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        self.create_context()
-        self.create_sockets()
-
-    def create_context(self):
-        self.ctx = zmq.Context()
-
-    @abc.abstractmethod
-    def create_sockets(self):
-        raise NotImplemented()
-
-
-class ZmqClientApp(ZmqBaseApp):
-    def create_sockets(self):
-        suburi = self.config.get(self.name, 'sub_connect_uri')
-        puburi = self.config.get(self.name, 'pub_connect_uri')
-        LOG.info('publishing events on %s', suburi)
-        LOG.info('listening for events on %s', puburi)
-
-        self.pub = self.ctx.socket(zmq.PUB)
-        self.pub.connect(suburi)
-
-        self.sub = self.ctx.socket(zmq.SUB)
-        self.sub.connect(puburi)
-
-    def send_message(self, tag, **message):
-        self.pub.send_multipart([
-            bytes(tag, 'utf8'),
-            msgpack.dumps(message)])
-
-    def receive_message(self):
-        msg = self.sub.recv_multipart()
-        return (msg[0], msgpack.loads(msg[1]))
