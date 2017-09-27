@@ -131,7 +131,9 @@ class ZmqClientApp(ZmqBaseApp):
         self.sub.connect(puburi)
 
     def send_message(self, tag, **message):
-        self.pub.send_multipart([tag, msgpack.dumps(message)])
+        self.pub.send_multipart([
+            bytes(tag, 'utf-8'),
+            msgpack.dumps(message)])
 
     def receive_message(self):
         msg = self.sub.recv_multipart()
