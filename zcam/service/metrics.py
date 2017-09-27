@@ -47,11 +47,16 @@ class MetricsPublisher(zcam.app.ZmqClientApp):
 
         while True:
             topic, data = self.receive_message()
-            client.write_points([dict(
-                measurement=topic,
-                tags=data.get(b'tags', {}),
-                fields=data[b'fields'],
-            )])
+            try:
+                LOG.debug('sending metric %s with fields %s',
+                          topic, data[b'fields'])
+                client.write_points([dict(
+                    measurement=topic,
+                    tags=data.get(b'tags', {}),
+                    fields=data[b'fields'],
+                )])
+            except Exception as err:
+                LOG.error('malformed message: %s', err)
 
 
 def main():

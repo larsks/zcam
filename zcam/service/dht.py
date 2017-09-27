@@ -47,7 +47,8 @@ class DHTSensorApp(zcam.app.ZmqClientApp):
                           self.args.name, pin, humidity, temperature)
                 self.send_message(
                     'sensor.dht.{}.temperature'.format(self.args.name),
-                    value=temperature)
+                    tags=dict(pin=pin, model=model),
+                    fields=dict(value=temperature))
                 self.send_message(
                     'sensor.dht.{}.humidity'.format(self.args.name),
                     tags=dict(pin=pin, model=model),
