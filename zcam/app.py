@@ -122,7 +122,8 @@ class ZmqClientApp(ZmqBaseApp):
     def create_sockets(self):
         suburi = self.config.get(self.name, 'sub_connect_uri')
         puburi = self.config.get(self.name, 'pub_connect_uri')
-        LOG.info('publishing events to %s', suburi)
+        LOG.info('publishing events on %s', suburi)
+        LOG.info('listening for events on %s', puburi)
 
         self.pub = self.ctx.socket(zmq.PUB)
         self.pub.connect(suburi)
@@ -132,7 +133,7 @@ class ZmqClientApp(ZmqBaseApp):
 
     def send_message(self, tag, **message):
         self.pub.send_multipart([
-            bytes(tag, 'utf-8'),
+            bytes(tag, 'utf8'),
             msgpack.dumps(message)])
 
     def receive_message(self):

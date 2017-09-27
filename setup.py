@@ -11,6 +11,7 @@ setup(
         'console_scripts': [
             'zcam-service-proxy = zcam.service.proxy:main',
             'zcam-service-motion = zcam.service.motion:main',
+            'zcam-service-messages = zcam.service.messages:main',
         ],
     }
 )
