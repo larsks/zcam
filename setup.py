@@ -14,6 +14,7 @@ setup(
             'zcam-service-messages = zcam.service.messages:main',
             'zcam-service-gpio = zcam.service.gpioservice:main',
             'zcam-service-dht = zcam.service.dht:main',
+            'zcam-service-keypad = zcam.service.keypad:main',
         ],
     }
 )
