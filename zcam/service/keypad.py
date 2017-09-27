@@ -43,11 +43,12 @@ class KeypadService(zcam.app.ZmqClientApp):
             '{}_device'.format(self.args.name),
             fallback=None)
 
-        if device is None:
-            device_name = self.config.get(
-                self.name,
-                '{}_device_name'.format(self.args.name),
-                fallback=None)
+        device_name = self.config.get(
+            self.name,
+            '{}_device_name'.format(self.args.name),
+            fallback=None)
+
+        if device is None and device_name:
             device = lookup_device(device_name)
 
         if device is None:
