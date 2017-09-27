@@ -8,33 +8,44 @@ LOG = logging.getLogger(__name__)
 
 
 class GpioServiceApp(zcam.app.ZmqClientApp):
-    def __init__(self, sensorname, bouncetime=None, **kwargs):
-        self.sensorname = sensorname
-        self.bouncetime = bouncetime
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def create_parser(self):
         p = super().create_parser()
         p.add_argument('--pin')
+        p.add_argument('--bouncetime')
+        p.add_argument('name')
         return p
 
     def create_overrides(self):
         return super().create_overrides() + [
-            ('pin', self.name, '{}_pin'.format(self.sensorname)),
+            ('pin', self.name, '{}_pin'.format(self.args.name)),
+            ('bouncetime', self.name, '{}_bouncetime'.format(self.args.name)),
         ]
 
     def main(self):
-        pin = self.config.getint(self.name, '{}_pin'.format(self.sensorname))
-        LOG.info('starting %s on pin %d', self.name, pin)
+        pin = self.config.getint(self.name,
+                                 '{}_pin'.format(self.args.name))
+        bouncetime = self.config.getint(self.name,
+                                        '{}_bouncetime'.format(self.args.name))
+
+        LOG.info('starting gpio sensor %s on pin %d', self.args.name, pin)
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(pin, GPIO.IN)
 
         waitargs = {}
-        if self.bouncetime:
-            waitargs['bouncetime'] = self.bouncetime
+        if bouncetime:
+            waitargs['bouncetime'] = bouncetime
 
         while True:
             GPIO.wait_for_edge(pin, GPIO.BOTH, **waitargs)
             LOG.debug('%s event on pin %s', self.name, pin)
-            self.send_message('sensor.{}'.format(self.sensorname),
+            self.send_message('gpio.{}'.format(self.args.name),
+                              pin=pin,
                               value=GPIO.input(pin))
+
+
+def main():
+    app = GpioServiceApp()
+    app.run()
