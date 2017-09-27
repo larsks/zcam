@@ -2,7 +2,10 @@ import abc
 import argparse
 import configparser
 import logging
+import msgpack
 import zmq
+
+import zcam.config
 
 LOG = logging.getLogger(__name__)
 
@@ -61,8 +64,11 @@ class App(abc.ABC):
         self.args = self.parser.parse_args()
 
     def create_config(self):
+        defaults = self.default_config_values.copy()
+        defaults.update(zcam.config.DEFAULTS)
+
         config = configparser.ConfigParser(
-            defaults=self.default_config_values,
+            defaults=defaults,
         )
         return config
 
@@ -94,7 +100,7 @@ class App(abc.ABC):
             pass
 
 
-class ZmqApp(App):
+class ZmqBaseApp(App):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -108,3 +114,23 @@ class ZmqApp(App):
     @abc.abstractmethod
     def create_sockets(self):
         raise NotImplemented()
+
+
+class ZmqClientApp(ZmqBaseApp):
+    def create_sockets(self):
+        suburi = self.config.get(self.name, 'sub_connect_uri')
+        puburi = self.config.get(self.name, 'pub_connect_uri')
+        LOG.info('publishing events to %s', suburi)
+
+        self.pub = self.ctx.socket(zmq.PUB)
+        self.pub.connect(suburi)
+
+        self.sub = self.ctx.socket(zmq.SUB)
+        self.sub.connect(puburi)
+
+    def send_message(self, tag, **message):
+        self.pub.send_multipart([tag, msgpack.dumps(message)])
+
+    def receive_message(self):
+        msg = self.sub.recv_multipart()
+        return (msg[0], msgpack.loads(msg[1]))
