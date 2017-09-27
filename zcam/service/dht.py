@@ -13,7 +13,7 @@ class DHTSensorApp(zcam.app.ZmqClientApp):
         p = super().create_parser()
         p.add_argument('--pin')
         p.add_argument('--model')
-        p.add_argument('--interval', type=float)
+        p.add_argument('--interval', type=int)
         p.add_argument('name')
         return p
 
