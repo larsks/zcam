@@ -25,8 +25,10 @@ class GpioServiceApp(zcam.app.ZmqClientApp):
     def main(self):
         pin = self.config.getint(self.name,
                                  '{}_pin'.format(self.args.name))
-        bouncetime = self.config.getint(self.name,
-                                        '{}_bouncetime'.format(self.args.name))
+        bouncetime = self.config.getint(
+            self.name,
+            '{}_bouncetime'.format(self.args.name),
+            fallback=None)
 
         LOG.info('starting gpio sensor %s on pin %d', self.args.name, pin)
         GPIO.setmode(GPIO.BCM)
