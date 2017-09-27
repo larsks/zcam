@@ -1,0 +1,6 @@
+zmq
+msgpack-python
+evdev
+RPi.gpio
+picamera
+git+https://github.com/adafruit/Adafruit_Python_DHT
