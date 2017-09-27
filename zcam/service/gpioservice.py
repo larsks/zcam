@@ -24,7 +24,7 @@ class GpioServiceApp(zcam.app.ZmqClientApp):
         ]
 
     def main(self):
-        pin = self.config.get(self.name, '{}_pin'.format(self.sensorname))
+        pin = self.config.getint(self.name, '{}_pin'.format(self.sensorname))
         LOG.info('starting %s on pin %d', self.name, pin)
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(pin, GPIO.IN)
