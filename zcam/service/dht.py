@@ -50,7 +50,8 @@ class DHTSensorApp(zcam.app.ZmqClientApp):
                     value=temperature)
                 self.send_message(
                     'sensor.dht.{}.humidity'.format(self.args.name),
-                    value=humidity)
+                    tags=dict(pin=pin, model=model),
+                    fields=dict(value=humidity))
             else:
                 LOG.warning('dht sensor %s failed to read value from pin %d',
                             self.args.name, pin)

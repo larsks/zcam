@@ -42,8 +42,8 @@ class GpioService(zcam.app.ZmqClientApp):
             GPIO.wait_for_edge(pin, GPIO.BOTH, **waitargs)
             LOG.debug('%s event on pin %s', self.name, pin)
             self.send_message('sensor.gpio.{}'.format(self.args.name),
-                              pin=pin,
-                              value=GPIO.input(pin))
+                              tags=dict(pin=pin),
+                              fields=dict(value=GPIO.input(pin)))
 
 
 def main():
