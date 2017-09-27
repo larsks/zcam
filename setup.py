@@ -12,6 +12,8 @@ setup(
             'zcam-service-proxy = zcam.service.proxy:main',
             'zcam-service-motion = zcam.service.motion:main',
             'zcam-service-messages = zcam.service.messages:main',
+            'zcam-service-gpio = zcam.service.gpioservice:main',
+            'zcam-service-dht = zcam.service.dht:main',
         ],
     }
 )
