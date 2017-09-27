@@ -141,6 +141,9 @@ class BaseApp(abc.ABC):
             if val is not None:
                 self.set(option, str(val))
 
+    def cleanup(self):
+        pass
+
     @abc.abstractmethod
     def main(self):
         raise NotImplemented()
@@ -151,3 +154,5 @@ class BaseApp(abc.ABC):
             self.main()
         except KeyboardInterrupt:
             pass
+        finally:
+            self.cleanup()

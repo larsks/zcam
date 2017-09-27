@@ -45,3 +45,9 @@ class ZmqClientApp(ZmqBaseApp):
     def receive_message(self):
         msg = self.sub.recv_multipart()
         return (msg[0], msgpack.loads(msg[1]))
+
+    def cleanup(self):
+        super().cleanup()
+        self.pub.close()
+        self.sub.close()
+        self.ctx.term()

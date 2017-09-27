@@ -28,10 +28,6 @@ class SendMessage(zcam.app.zmq.ZmqClientApp):
         LOG.info('sending message %s %s', self.args.topic, msg)
         self.send_message(self.args.topic, **msg)
 
-        # give zmq a chance to send the message
-        time.sleep(1)
-
-
 def main():
     app = SendMessage()
     app.run()
