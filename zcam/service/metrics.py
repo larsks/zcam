@@ -1,49 +1,41 @@
 import influxdb
 import logging
 
-import zcam.app
+import zcam.app.zmq
 
 LOG = logging.getLogger(__name__)
 
+default_host = '127.0.0.1'
+default_port = '8086'
+default_database = 'zcam'
 
-class MetricsPublisher(zcam.app.ZmqClientApp):
+
+class MetricsPublisher(zcam.app.zmq.ZmqClientApp):
+    namespace = 'zcam.service.metrics'
 
     def create_parser(self):
         p = super().create_parser()
         p.add_argument('--host')
         p.add_argument('--port')
         p.add_argument('--database')
-        p.add_argument('name')
         return p
 
     def create_overrides(self):
         return super().create_overrides() + [
-            ('host', self.name, '{}_host'.format(self.args.name)),
-            ('port', self.name, '{}_port'.format(self.args.name)),
-            ('database', self.name, '{}_database'.format(self.args.name)),
+            'host', 'port', 'database'
         ]
 
     def main(self):
-        host = self.config.get(
-            self.name,
-            '{}_host'.format(self.args.name),
-            fallback='localhost')
-        port = self.config.getint(
-            self.name,
-            '{}_port'.format(self.args.name),
-            fallback=8086)
-        database = self.config.getint(
-            self.name,
-            '{}_database'.format(self.args.name),
-            fallback='zcam')
+        host = self.get('host', default_host)
+        port = int(self.get('port', default_port))
+        database = self.get('database', default_database)
 
-        client = influxdb.InfluxDBClient(
-            host=host, port=port)
+        client = influxdb.InfluxDBClient(host=host, port=port)
 
         client.create_database(database)
         client.switch_database(database)
 
-        self.sub.subscribe('sensor')
+        self.sub.subscribe('zcam.sensor')
 
         while True:
             topic, data = self.receive_message()
