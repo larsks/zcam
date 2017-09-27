@@ -42,7 +42,7 @@ class DHTSensorApp(zcam.app.zmq.ZmqClientApp):
                           'got humidity = %f, temp = %f',
                           self.name, pin, *reading)
 
-                for i, label in enumerate(['temperature', 'humidity']):
+                for i, label in enumerate(['humidity', 'temperature']):
                     self.send_message(
                         '{}.{}'.format(self.name, label),
                         tags=dict(pin=pin, instance=self.args.instance,
