@@ -17,6 +17,8 @@ setup(
             'zcam-service-keypad = zcam.service.keypad:main',
             'zcam-service-metrics = zcam.service.metrics:main',
             'zcam-service-pin = zcam.service.pin:main',
+            'zcam-service-pwm = zcam.service.pwm:main',
+            'zcam-sendmessage = zcam.sendmessage:main',
         ],
     }
 )
