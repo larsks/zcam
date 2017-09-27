@@ -29,6 +29,8 @@ class KeypadService(zcam.app.zmq.ZmqClientApp):
         p = super().create_parser()
         p.add_argument('--device')
         p.add_argument('--device-name')
+        p.add_argument('--no-grab', '-n',
+                       action='store_true')
         return p
 
     def create_overrides(self):
@@ -47,7 +49,9 @@ class KeypadService(zcam.app.zmq.ZmqClientApp):
             device = default_device
 
         keypad = evdev.InputDevice(device)
-        keypad.grab()
+
+        if not self.args.no_grab:
+            keypad.grab()
 
         LOG.info('starting keypad %s on device %s',
                  self.name, device)
