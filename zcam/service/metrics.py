@@ -27,14 +27,15 @@ class MetricsPublisher(zcam.app.ZmqClientApp):
         host = self.config.get(
             self.name,
             '{}_host'.format(self.args.name),
-            'localhost')
+            fallback='localhost')
         port = self.config.getint(
             self.name,
             '{}_port'.format(self.args.name),
-            8086)
+            fallback=8086)
         database = self.config.getint(
             self.name,
-            '{}_database'.format(self.args.name))
+            '{}_database'.format(self.args.name),
+            fallback='zcam')
 
         client = influxdb.InfluxDBClient(
             host=host, port=port)
