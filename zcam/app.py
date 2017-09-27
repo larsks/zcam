@@ -23,10 +23,10 @@ class App(abc.ABC):
 
         self.parser = self.create_parser()
         self.config = self.create_config()
-        self.overrides = self.create_overrides()
 
         self.parse_args()
         self.read_config()
+        self.overrides = self.create_overrides()
         self.apply_overrides()
         self.configure_logging()
 

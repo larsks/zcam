@@ -8,8 +8,6 @@ LOG = logging.getLogger(__name__)
 
 
 class GpioServiceApp(zcam.app.ZmqClientApp):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def create_parser(self):
         p = super().create_parser()
