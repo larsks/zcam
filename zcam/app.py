@@ -89,7 +89,7 @@ class App(abc.ABC):
         for arg, section, option in self.overrides:
             val = getattr(self.args, arg, None)
             if val is not None:
-                self.config.set(section, option, val)
+                self.config.set(section, option, str(val))
 
     @abc.abstractmethod
     def main(self):
