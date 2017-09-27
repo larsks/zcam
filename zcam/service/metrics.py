@@ -47,7 +47,7 @@ class MetricsPublisher(zcam.app.ZmqClientApp):
 
         while True:
             topic, data = self.receive_message()
-            self.client.write_points([dict(
+            client.write_points([dict(
                 measurement=topic,
                 tags=data['tags'],
                 fields=data['fields'],
