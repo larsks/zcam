@@ -1,10 +1,12 @@
 import evdev
 import logging
 
-import zcam.app
+import zcam.app.zmq
 
 LOG = logging.getLogger(__name__)
 KEY_STATES = ['up', 'down', 'hold']
+
+default_device = '/dev/input/event0'
 
 
 def is_keypad(device):
@@ -20,45 +22,35 @@ def lookup_device(name):
             return dev
 
 
-class KeypadService(zcam.app.ZmqClientApp):
+class KeypadService(zcam.app.zmq.ZmqClientApp):
+    namespace = 'zcam.device.keypad'
 
     def create_parser(self):
         p = super().create_parser()
         p.add_argument('--device')
         p.add_argument('--device-name')
-        p.add_argument('name')
         return p
 
     def create_overrides(self):
         return super().create_overrides() + [
-            ('device', self.name,
-             '{}_device'.format(self.args.name)),
-            ('device_name', self.name,
-             '{}_device_name'.format(self.args.name)),
+            'device', 'device_name'
         ]
 
     def main(self):
-        device = self.config.get(
-            self.name,
-            '{}_device'.format(self.args.name),
-            fallback=None)
-
-        device_name = self.config.get(
-            self.name,
-            '{}_device_name'.format(self.args.name),
-            fallback=None)
+        device = self.get('device', None)
+        device_name = self.get('device', None)
 
         if device is None and device_name:
             device = lookup_device(device_name)
 
         if device is None:
-            device = '/dev/input/event0'
+            device = default_device
 
         keypad = evdev.InputDevice(device)
         keypad.grab()
 
         LOG.info('starting keypad %s on device %s',
-                 self.args.name, device)
+                 self.name, device)
 
         for event in keypad.read_loop():
             if event.type != evdev.ecodes.EV_KEY:
@@ -75,12 +67,12 @@ class KeypadService(zcam.app.ZmqClientApp):
             }
 
             LOG.debug('keypad %s on device %s event %s',
-                      self.args.name,
+                      self.name,
                       device,
-                      event)
+                      eventdict)
 
             self.send_message(
-                'keypad.{}.{}'.format(self.args.name, key.keycode),
+                '{}.key.{}'.format(self.name, key.keycode),
                 **eventdict)
 
 
