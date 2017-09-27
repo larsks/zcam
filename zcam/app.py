@@ -64,7 +64,9 @@ class App(abc.ABC):
         self.args = self.parser.parse_args()
 
     def create_config(self):
-        defaults = self.default_config_values.copy()
+        defaults = {}
+        if self.default_config_values:
+            defaults.update(self.default_config_values)
         defaults.update(zcam.config.DEFAULTS)
 
         config = configparser.ConfigParser(
