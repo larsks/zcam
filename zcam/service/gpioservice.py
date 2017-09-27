@@ -7,7 +7,7 @@ import zcam.app
 LOG = logging.getLogger(__name__)
 
 
-class GpioServiceApp(zcam.app.ZmqClientApp):
+class GpioService(zcam.app.ZmqClientApp):
 
     def create_parser(self):
         p = super().create_parser()
@@ -47,5 +47,5 @@ class GpioServiceApp(zcam.app.ZmqClientApp):
 
 
 def main():
-    app = GpioServiceApp()
+    app = GpioService()
     app.run()
