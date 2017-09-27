@@ -28,9 +28,11 @@ class DHTSensorApp(zcam.app.ZmqClientApp):
         pin = self.config.getint(self.name,
                                  '{}_pin'.format(self.args.name))
         model = self.config.getint(self.name,
-                                   '{}_model'.format(self.args.name))
+                                   '{}_model'.format(self.args.name),
+                                   fallback='dht22')
         interval = self.config.getint(self.name,
-                                      '{}_interval'.format(self.args.name))
+                                      '{}_interval'.format(self.args.name),
+                                      fallback=60)
 
         model_id = getattr(Adafruit_DHT, model.upper())
 
