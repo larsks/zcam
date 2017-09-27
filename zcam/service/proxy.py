@@ -22,8 +22,8 @@ class ProxyApp(zcam.app.ZmqBaseApp):
         return self.config.get(self.name, 'sub_bind_uri')
 
     def create_sockets(self):
-        self.pub = self.ctx.socket(zmq.PUB)
-        self.sub = self.ctx.socket(zmq.SUB)
+        self.pub = self.ctx.socket(zmq.XPUB)
+        self.sub = self.ctx.socket(zmq.XSUB)
 
         self.pub.bind(self.puburi)
         self.sub.bind(self.suburi)
