@@ -9,50 +9,56 @@ LOG = logging.getLogger(__name__)
 
 class GpioService(zcam.app.zmq.ZmqClientApp):
     namespace = 'zcam.sensor.gpio'
+    default_pull = None
+    default_edge = None
+    default_bouncetime = None
 
     def create_parser(self):
         p = super().create_parser()
         p.add_argument('--pin')
+        p.add_argument('--edge',
+                       choices=['rising', 'falling', 'both'])
         p.add_argument('--bouncetime')
-        g = p.add_mutually_exclusive_group()
-        g.add_argument('--pull-up',
-                       action='store_true')
-        g.add_argument('--pull-down',
-                       action='store_true')
+        p.add_argument('--pull',
+                       choices=['up', 'down'])
         return p
 
     def create_overrides(self):
         return super().create_overrides() + [
-            'pin', 'bouncetime',
-            'pull_up', 'pull_down'
+            'pin', 'bouncetime', 'edge', 'pull'
         ]
 
     def main(self):
         pin = int(self.get('pin'))
-        bouncetime = self.get('bouncetime', None)
-        pull_up = self.get('pull_up', 'false').lower() == 'true'
-        pull_down = self.get('pull_down', 'false').lower() == 'true'
+        bouncetime = self.get('bouncetime', self.default_bouncetime)
+        edge = self.get('edge', self.default_edge)
+        pull = self.get('pull', self.default_pull)
 
-        if pull_up and pull_down:
-            raise ValueError('pull_up and pull_down are mutually exclusive')
-
-        if pull_up:
-            pud = GPIO.PUD_UP
-        elif pull_down:
-            pud = GPIO.PUD_DOWN
+        if pull == 'up':
+            _pull = GPIO.PUD_UP
+        elif pull == 'down':
+            _pull = GPIO.PUD_DOWN
         else:
-            pud = GPIO.PUD_OFF
+            _pull = GPIO.PUD_OFF
+
+        if edge == 'rising':
+            _edge = GPIO.RISING
+        elif edge == 'falling':
+            _edge = GPIO.FALLING
+        else:
+            _edge = GPIO.BOTH
 
         waitargs = {}
         if bouncetime:
             waitargs['bouncetime'] = int(bouncetime)
 
-        LOG.info('starting gpio sensor %s on pin %d', self.name, pin)
+        LOG.info('starting gpio sensor %s on pin %d pull %d edge %d',
+                 self.name, pin, _pull, _edge)
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(pin, GPIO.IN, pull_up_down=pud)
+        GPIO.setup(pin, GPIO.IN, pull_up_down=_pull)
 
         while True:
-            GPIO.wait_for_edge(pin, GPIO.BOTH, **waitargs)
+            GPIO.wait_for_edge(pin, _edge, **waitargs)
             value = GPIO.input(pin)
             LOG.debug('%s event %s on pin %s', self.name, value, pin)
             self.send_message('{}'.format(self.name),
