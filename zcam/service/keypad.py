@@ -43,9 +43,12 @@ class KeypadService(zcam.app.zmq.ZmqClientApp):
         device_name = self.get('device', None)
 
         if device is None and device_name:
+            LOG.debug('no device specified, checking device_name')
             device = lookup_device(device_name)
 
         if device is None:
+            LOG.debug('no device specified; using default device %s',
+                      default_device)
             device = default_device
 
         keypad = evdev.InputDevice(device)
