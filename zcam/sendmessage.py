@@ -1,6 +1,6 @@
+import json
 import logging
 import time
-import json
 
 import zcam.app.base
 import zcam.app.zmq
@@ -18,6 +18,10 @@ class SendMessage(zcam.app.zmq.ZmqClientApp):
         return p
 
     def main(self):
+        # this gives the zmq connection thread time to
+        # connect to the remote socket.  See
+        # http://zguide.zeromq.org/page:all#Getting-the-Message-Out
+        time.sleep(0.1)
         if self.args.json:
             msg = json.loads(self.args.msg[0])
         else:
@@ -27,6 +31,7 @@ class SendMessage(zcam.app.zmq.ZmqClientApp):
 
         LOG.info('sending message %s %s', self.args.topic, msg)
         self.send_message(self.args.topic, **msg)
+
 
 def main():
     app = SendMessage()
