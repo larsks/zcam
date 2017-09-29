@@ -2,33 +2,19 @@ import influxdb
 import logging
 
 import zcam.app.zmq
+import zcam.schema.config
 
 LOG = logging.getLogger(__name__)
-
-default_host = '127.0.0.1'
-default_port = '8086'
-default_database = 'zcam'
 
 
 class MetricsPublisher(zcam.app.zmq.ZmqClientApp):
     namespace = 'zcam.service.metrics'
-
-    def create_parser(self):
-        p = super().create_parser()
-        p.add_argument('--host')
-        p.add_argument('--port')
-        p.add_argument('--database')
-        return p
-
-    def create_overrides(self):
-        return super().create_overrides() + [
-            'host', 'port', 'database'
-        ]
+    schema = zcam.schema.config.MetricsSchema(strict=True)
 
     def main(self):
-        host = self.get('host', default_host)
-        port = int(self.get('port', default_port))
-        database = self.get('database', default_database)
+        host = self.config['host']
+        port = self.config['port']
+        database = self.config['database']
 
         client = influxdb.InfluxDBClient(host=host, port=port)
 
@@ -48,7 +34,7 @@ class MetricsPublisher(zcam.app.zmq.ZmqClientApp):
                     fields=data[b'fields'],
                 )])
             except Exception as err:
-                LOG.error('malformed message: %s', err)
+                LOG.error('failed to write metric: %s', err)
 
 
 def main():
