@@ -57,3 +57,10 @@ class CameraSchema(PathSchema):
     flip_y = Boolean(missing=False)
     lead_time = Integer(missing=5)
     interval = Integer(missing=2)
+
+
+class ActivitySchema(BaseSchema):
+    interval = Integer(missing=10)
+    extend = Integer(missing=10)
+    limit = Integer(missing=120)
+    cooldown = Integer(missing=30)

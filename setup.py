@@ -19,6 +19,7 @@ setup(
             'zcam-service-pin = zcam.service.pin:main',
             'zcam-service-pwm = zcam.service.pwm:main',
             'zcam-service-button = zcam.service.button:main',
+            'zcam-service-activity = zcam.service.activity:main',
             'zcam-sendmessage = zcam.sendmessage:main',
         ],
     }
