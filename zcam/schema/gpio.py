@@ -43,3 +43,10 @@ class GpioSchema(PinSchema):
     def transform_gpio_constants_out(self, data):
         data['pull'] = GPIO_PUD_OUT[data['pull']]
         data['edge'] = GPIO_EDGE_OUT[data['edge']]
+
+
+class ButtonSchema(GpioSchema):
+    bouncetime = Integer(missing=100)
+    pull = String(
+        missing='down',
+        validate=OneOf(['up', 'down', 'off']))
