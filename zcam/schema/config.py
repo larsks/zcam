@@ -44,6 +44,11 @@ class KeypadSchema(BaseSchema):
                                   'or device_name')
 
 
+class PasscodeSchema(BaseSchema):
+    keypad = String()
+    timeout = Integer(missing=10)
+
+
 class MetricsSchema(BaseSchema):
     host = String(missing='localhost')
     port = Integer(missing=8086)

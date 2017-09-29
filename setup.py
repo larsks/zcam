@@ -16,7 +16,7 @@ setup(
             'zcam-service-dht = zcam.service.dht:main',
             'zcam-service-keypad = zcam.service.keypad:main',
             'zcam-service-metrics = zcam.service.metrics:main',
-            'zcam-service-pin = zcam.service.pin:main',
+            'zcam-service-passcode = zcam.service.passcode:main',
             'zcam-service-pwm = zcam.service.pwm:main',
             'zcam-service-button = zcam.service.button:main',
             'zcam-service-activity = zcam.service.activity:main',

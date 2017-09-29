@@ -3,6 +3,7 @@ import logging
 import time
 
 import zcam.app.zmq
+import zcam.schema.config
 
 LOG = logging.getLogger(__name__)
 KEYMAP = {
@@ -59,37 +60,27 @@ class ExpiringBuffer(object):
         return self.getvalue()
 
 
-class PinService(zcam.app.zmq.ZmqClientApp):
+class PasscodeService(zcam.app.zmq.ZmqClientApp):
     '''Receive keystrokes from keypads and assemble them into PINs.
 
     A PIN is sent to the message bus when the ENTER key on a keypad
     is pressed.
     '''
 
-    namespace = 'zcam.device.pin'
+    namespace = 'zcam.device.passcode'
+    schema = zcam.schema.config.PasscodeSchema(strict=True)
 
-    def __init__(self, **kwargs):
+    def prepare(self):
+        super().prepare()
         self.pads = defaultdict(self.buffermaker)
         self.timeout = default_timeout
-        super().__init__(**kwargs)
 
     def buffermaker(self):
         return ExpiringBuffer(self.timeout)
 
-    def create_parser(self):
-        p = super().create_parser()
-        p.add_argument('--keypad')
-        p.add_argument('--timeout')
-        return p
-
-    def create_overrides(self):
-        return super().create_overrides() + [
-            'keypad', 'timeout',
-        ]
-
     def main(self):
-        keypad = self.get('keypad', None)
-        self.timeout = self.get('timeout', default_timeout)
+        keypad = self.config.get('keypad_instance')
+        self.timeout = self.config['timeout']
 
         if keypad:
             LOG.debug('listening for messages from keypad instance %s',
@@ -97,7 +88,7 @@ class PinService(zcam.app.zmq.ZmqClientApp):
             self.sub.subscribe('zcam.device.keypad.{}'.format(keypad))
         else:
             LOG.debug('listening for messages from all keypads')
-            self.sub.subscribe('zcam.device.keypad'.format(keypad))
+            self.sub.subscribe('zcam.device.keypad')
 
         while True:
             tag, msg = self.receive_message()
@@ -108,26 +99,26 @@ class PinService(zcam.app.zmq.ZmqClientApp):
             if msg[b'keystate'] != b'up':
                 continue
 
-            LOG.debug('pin service %s received message %s',
+            LOG.debug('passcode service %s received message %s',
                       self.name, tag)
 
             key = KEYMAP[msg[b'keycode']]
             keypad = msg[b'instance']
             if key == '\n':
-                self.handle_pin(keypad)
+                self.handle_passcode(keypad)
             else:
                 self.pads[keypad].append(key)
 
-    def handle_pin(self, keypad):
-        pin = str(self.pads[keypad])
+    def handle_passcode(self, keypad):
+        passcode = str(self.pads[keypad])
         self.pads[keypad].clear()
-        LOG.debug('pin service %s sending pin %s',
-                  self.name, repr(pin))
+        LOG.debug('passcode service %s sending passcode %s',
+                  self.name, repr(passcode))
         self.send_message('{}'.format(self.name),
                           keypad=keypad,
-                          pin=pin)
+                          passcode=passcode)
 
 
 def main():
-    app = PinService()
+    app = PasscodeService()
     app.run()
