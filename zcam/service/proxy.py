@@ -11,6 +11,11 @@ class ProxyApp(zcam.app.zmq.ZmqBaseApp):
     namespace = 'zcam.service.proxy'
     schema = zcam.schema.config.ProxySchema(strict=True)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pub = None
+        self.sub = None
+
     def main(self):
         zmq.proxy(self.pub, self.sub)
 

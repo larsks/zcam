@@ -54,13 +54,14 @@ class BaseApp(object):
                        const='DEBUG',
                        dest='loglevel')
 
-        for fieldname, fieldspec in self.schema.fields.items():
+        g = p.add_argument_group('Config options')
+        for fieldname, fieldspec in sorted(self.schema.fields.items()):
             kwargs = {}
             if isinstance(fieldspec, marshmallow.fields.List):
                 kwargs['action'] = 'append'
                 kwargs['default'] = []
 
-            p.add_argument('--{}'.format(fieldname.replace('_', '-')),
+            g.add_argument('--{}'.format(fieldname.replace('_', '-')),
                            **kwargs)
 
         p.set_defaults(loglevel='WARNING')
