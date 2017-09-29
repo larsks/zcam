@@ -31,19 +31,6 @@ class ProxySchema(BaseSchema):
         validate=Regexp('^tcp://[^:]+:\d+'))
 
 
-class GpioSchema(PinSchema):
-    edge = String(
-        missing='both',
-        validate=OneOf(['rising', 'falling', 'both']))
-    pull = String(
-        missing='off',
-        validate=OneOf(['up', 'down', 'off']))
-    bouncetime = Integer()
-    timeout = Integer()
-    pub_bind_uri = String(
-        validate=Regexp(r'tcp://[^:]+:\d+'))
-
-
 class KeypadSchema(BaseSchema):
     device = String()
     device_name = String()
