@@ -1,94 +1,48 @@
-import abc
 import argparse
 import configparser
 import logging
+import marshmallow
 
-import zcam.config
+import zcam.schema.config
 
 LOG = logging.getLogger(__name__)
 UNSET = object()
 
 
-def KeyValueArgument(value):
-    try:
-        k, v = value.split('=', 1)
-        return k, v
-    except ValueError:
-        raise argparse.ArgumentError('values must of the form <key>=<value>')
+def InstanceSetter(app):
+    class _InstanceSetter(argparse.Action):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.app = app
+
+        def __call__(self, parser, namespace, values, option_string=None):
+            setattr(namespace, self.dest, values)
+            self.app.instance = values
+
+    return _InstanceSetter
 
 
-class BaseApp(abc.ABC):
+class BaseApp(object):
     namespace = 'zcam'
+    schema = zcam.schema.config.BaseSchema(strict=True)
+    instance = 'default'
 
-    def __init__(self,
-                 default_config_file=None,
-                 default_config_values=None):
-
-        self.default_config_file = default_config_file
-        self.default_config_values = default_config_values
-
-        self.parser = self.create_parser()
-        self.config = self.create_config()
-
-        self.parse_args()
-        self.read_config()
-        self.overrides = self.create_overrides()
-        self.apply_overrides()
-        self.configure_logging()
+    def __init__(self):
+        self.configparser = self.create_configparser()
+        self.argparser = self.create_argparser()
 
     @property
     def name(self):
-        return '.'.join(x for x in [self.namespace, self.args.instance]
-                        if x is not None)
+        return '{}.{}'.format(self.namespace, self.instance)
 
-    def get(self, option, default=UNSET):
-        '''Resolve a configuration value.
-
-        Look for the named configuration value in the current section
-        section (determined by `self.name`) and in any superior
-        sections (determined by stripping dot-delimited components from
-        the section name).
-        '''
-
-        components = self.name.split('.')
-        hier = reversed([
-            '.'.join(components[:i + 1])
-            for i in range(len(components))
-        ])
-
-        for section in hier:
-            LOG.debug('looking for %s in %s', option, section)
-            try:
-                return self.config.get(section, option)
-            except (configparser.NoOptionError, configparser.NoSectionError):
-                continue
-
-        if default is not UNSET:
-            return default
-        else:
-            raise KeyError(option)
-
-    def set(self, option, value):
-        return self.config.set(self.name, option, value)
-
-    def options(self):
-        return self.config.items(section=self.name)
-
-    def configure_logging(self):
-        logging.basicConfig(level=self.args.loglevel)
-
-    def create_parser(self):
+    def create_argparser(self):
         p = argparse.ArgumentParser()
         p.add_argument('--config-file', '-f',
                        default=[],
                        action='append')
-        p.add_argument('--option', '-o',
-                       action='append',
-                       type=KeyValueArgument,
-                       metavar='OPTION=VALUE',
-                       default=[])
         p.add_argument('--instance',
-                       default='default')
+                       default='default',
+                       action=InstanceSetter(self))
 
         g = p.add_argument_group('Logging options')
         g.add_argument('--verbose', '-v',
@@ -100,59 +54,82 @@ class BaseApp(abc.ABC):
                        const='DEBUG',
                        dest='loglevel')
 
+        for fieldname, fieldspec in self.schema.fields.items():
+            kwargs = {}
+            if isinstance(fieldspec, marshmallow.fields.List):
+                kwargs['action'] = 'append'
+                kwargs['default'] = []
+
+            p.add_argument('--{}'.format(fieldname.replace('_', '-')),
+                           **kwargs)
+
         p.set_defaults(loglevel='WARNING')
 
         return p
 
-    def create_overrides(self):
-        return []
+    def create_configparser(self):
+        return configparser.ConfigParser()
 
     def parse_args(self):
-        self.args = self.parser.parse_args()
-
-    def create_config(self):
-        defaults = {}
-        if self.default_config_values:
-            defaults.update(self.default_config_values)
-        defaults.update(zcam.config.DEFAULTS)
-
-        config = configparser.ConfigParser(
-            defaults=defaults,
-        )
-        return config
-
-    def create_required_sections(self):
-        if not self.config.has_section(self.name):
-            self.config.add_section(self.name)
+        self.args = self.argparser.parse_args()
 
     def read_config(self):
-        config_files = self.args.config_file + [self.default_config_file]
-        for cfg in (path for path in config_files if path is not None):
-            self.config.read(cfg)
+        for cf in self.args.config_file:
+            self.configparser.read(cf)
 
-        self.create_required_sections()
+    def validate_config(self):
+        hier = self.name.split('.')
+        config = {}
+        for section in ['.'.join(hier[:i + 1]) for i in range(len(hier))]:
+            LOG.debug('checking section %s', section)
+            try:
+                config.update(dict(self.configparser[section]))
+            except KeyError:
+                pass
 
-    def apply_overrides(self):
-        for option, value in self.args.option:
-            self.set(option, value)
+        LOG.debug('config before args: %s', config)
+        LOG.debug('args: %s', self.args)
 
-        for option in self.overrides:
-            val = getattr(self.args, option, None)
-            if val is not None:
-                self.set(option, str(val))
+        config.update({k: v for k, v in vars(self.args).items()
+                       if v is not None})
 
-    def cleanup(self):
+        LOG.debug('config after args: %s', config)
+
+        result, errors = self.schema.load(config)
+        self.config = result
+
+    def configure_logging(self):
+        logging.basicConfig(level=self.args.loglevel)
+
+    def prepare(self):
+        LOG.debug('preparing')
         pass
 
-    @abc.abstractmethod
+    def cleanup(self):
+        LOG.debug('cleaning up')
+        pass
+
     def main(self):
         raise NotImplemented()
 
     def run(self):
-        LOG.info('starting %s', self.name)
         try:
+            self.parse_args()
+            self.configure_logging()
+            self.read_config()
+            self.validate_config()
+
+            self.prepare()
             self.main()
         except KeyboardInterrupt:
             pass
+        except marshmallow.exceptions.ValidationError as err:
+            LOG.error('There was an error in the configuration:')
+            for fieldname, errors in err.messages.items():
+                for error in errors:
+                    if fieldname == '_schema':
+                        LOG.error('%s', error)
+                    else:
+                        LOG.error('In field %s: %s', fieldname, error)
         finally:
             self.cleanup()
