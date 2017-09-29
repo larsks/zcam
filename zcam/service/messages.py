@@ -1,22 +1,24 @@
 import logging
+from marshmallow.fields import List, String
 
 import zcam.app.zmq
+import zcam.schema.config
 
 LOG = logging.getLogger(__name__)
 
 
+class MessagesSchema(zcam.schema.config.BaseSchema):
+    subscription = List(String)
+
+
 class LogMessagesApp(zcam.app.zmq.ZmqClientApp):
-    def create_parser(self):
-        p = super().create_parser()
-        p.add_argument('subscription',
-                       nargs='*')
-        return p
+    namespace = 'zcam.service.messages'
+    schema = MessagesSchema(strict=True)
 
     def main(self):
-        if not self.args.subscription:
-            self.args.subscription = ['']
-
-        for sub in self.args.subscription:
+        subscription = next(sub for sub in [self.config.get('subscription'), ['']]
+                            if sub)
+        for sub in subscription:
             LOG.debug('subscribing to %s', repr(sub))
             self.sub.subscribe(bytes(sub, 'utf8'))
 

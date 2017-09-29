@@ -2,58 +2,45 @@ import evdev
 import logging
 
 import zcam.app.zmq
+import zcam.schema.config
 
 LOG = logging.getLogger(__name__)
 KEY_STATES = ['up', 'down', 'hold']
 
-default_device = '/dev/input/event0'
-
-
-def is_keypad(device):
-    return (evdev.ecodes.KEY_KP1
-            in device.capabilities()[evdev.ecodes.EV_KEY])
-
 
 def lookup_device(name):
+    '''Look for an input device by name.
+
+    This may fail if you have a multifunction input device that
+    reports itself as, e.g., both a keyboard and a mouse.
+    '''
+
     LOG.debug('looking for input device "%s"', name)
     devices = [evdev.InputDevice(fn) for fn in evdev.list_devices()]
     for dev in devices:
-        if dev.name == name and is_keypad(dev):
+        if dev.name == name:
+            LOG.debug('found input device "%s"', dev.fn)
             return dev
 
 
 class KeypadService(zcam.app.zmq.ZmqClientApp):
     namespace = 'zcam.device.keypad'
-
-    def create_parser(self):
-        p = super().create_parser()
-        p.add_argument('--device')
-        p.add_argument('--device-name')
-        p.add_argument('--no-grab', '-n',
-                       action='store_true')
-        return p
-
-    def create_overrides(self):
-        return super().create_overrides() + [
-            'device', 'device_name'
-        ]
+    schema = zcam.schema.config.KeypadSchema(strict=True)
 
     def main(self):
-        device = self.get('device', None)
-        device_name = self.get('device', None)
+        device = self.config.get('device')
+        device_name = self.config.get('device_name')
 
         if device is None and device_name:
-            LOG.debug('no device specified, checking device_name')
             device = lookup_device(device_name)
 
         if device is None:
-            LOG.debug('no device specified; using default device %s',
-                      default_device)
-            device = default_device
+            raise ValueError('unable to find a keypad')
 
         keypad = evdev.InputDevice(device)
 
-        if not self.args.no_grab:
+        if self.config.get('grab'):
+            LOG.info('grabbing device %s', device)
             keypad.grab()
 
         LOG.info('starting keypad %s on device %s',
