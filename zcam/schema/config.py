@@ -44,13 +44,6 @@ class KeypadSchema(BaseSchema):
                                   'or device_name')
 
 
-class DHTSchema(PinSchema):
-    model = String(
-        missing='dht22',
-        validate=OneOf(['dht22', 'dht11']))
-    interval = Integer()
-
-
 class MetricsSchema(BaseSchema):
     host = String(missing='localhost')
     port = Integer(missing=8086)
