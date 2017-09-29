@@ -56,13 +56,19 @@ class BaseApp(object):
 
         g = p.add_argument_group('Config options')
         for fieldname, fieldspec in sorted(self.schema.fields.items()):
-            kwargs = {}
             if isinstance(fieldspec, marshmallow.fields.List):
-                kwargs['action'] = 'append'
-                kwargs['default'] = []
-
-            g.add_argument('--{}'.format(fieldname.replace('_', '-')),
-                           **kwargs)
+                g.add_argument('--{}'.format(fieldname.replace('_', '-')),
+                               action='append',
+                               default=[])
+            elif isinstance(fieldspec, marshmallow.fields.Boolean):
+                g.add_argument('--{}'.format(fieldname.replace('_', '-')),
+                               action='store_true',
+                               dest=fieldname)
+                g.add_argument('--no-{}'.format(fieldname.replace('_', '-')),
+                               action='store_false',
+                               dest=fieldname)
+            else:
+                g.add_argument('--{}'.format(fieldname.replace('_', '-')))
 
         p.set_defaults(loglevel='WARNING')
 
