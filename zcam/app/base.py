@@ -112,6 +112,12 @@ class BaseApp(object):
     def configure_logging(self):
         logging.basicConfig(level=self.args.loglevel)
 
+    def configure_loglevels(self):
+        for logspec in self.config.get('loglevels', []):
+            name, level = logspec.split('=', 1)
+            logger = logging.getLogger(name)
+            logger.setLevel(level)
+
     def prepare(self):
         LOG.debug('preparing')
         pass
@@ -129,6 +135,7 @@ class BaseApp(object):
             self.configure_logging()
             self.read_config()
             self.validate_config()
+            self.configure_loglevels()
 
             LOG.info('starting %s', self.name)
             self.prepare()

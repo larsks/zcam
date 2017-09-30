@@ -10,6 +10,7 @@ class BaseSchema(Schema):
     sub_connect_uri = String(
         missing='tcp://127.0.0.1:7701',
         validate=Regexp('^tcp://[^:]+:\d+'))
+    loglevels = List(String())
 
 
 class PathSchema(BaseSchema):
@@ -72,7 +73,7 @@ class ActivitySchema(BaseSchema):
 
 
 class MessagesSchema(BaseSchema):
-    subscription = List(String)
+    subscription = List(String())
 
 
 class LedSchema(PinSchema):
