@@ -32,8 +32,8 @@ class GpioService(zcam.app.zmq.ZmqClientApp):
             value = GPIO.input(pin)
             LOG.debug('%s event %s on pin %s', self.name, value, pin)
             self.send_message('{}'.format(self.name),
-                              tags=dict(pin=pin, instance=self.instance),
-                              fields=dict(value=value))
+                              value=value,
+                              tags=dict(pin=pin, instance=self.instance))
 
 
 def main():

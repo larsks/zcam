@@ -30,11 +30,12 @@ class DHTSensorApp(zcam.app.zmq.ZmqClientApp):
                           self.name, pin, *reading)
 
                 for i, label in enumerate(['humidity', 'temperature']):
-                    self.send_message(
-                        '{}.{}'.format(self.name, label),
-                        tags=dict(pin=pin, instance=self.args.instance,
-                                  model=model),
-                        fields=dict(value=reading[i]))
+                    self.send_message('{}.{}'.format(self.name, label),
+                                      value=reading[i],
+                                      tags=dict(pin=pin,
+                                                instance=self.args.instance,
+                                                model=model)
+                                      )
             else:
                 LOG.warning('dht sensor %s failed to read value from pin %d',
                             self.name, pin)

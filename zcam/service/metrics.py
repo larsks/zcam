@@ -31,7 +31,7 @@ class MetricsPublisher(zcam.app.zmq.ZmqClientApp):
                 client.write_points([dict(
                     measurement=topic,
                     tags=data.get(b'tags', {}),
-                    fields=data[b'fields'],
+                    fields=dict(value=data.value)
                 )])
             except Exception as err:
                 LOG.error('failed to write metric: %s', err)
