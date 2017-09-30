@@ -77,3 +77,8 @@ class MessagesSchema(BaseSchema):
 
 class LedSchema(PinSchema):
     subscription = String(required=True)
+
+
+class ControllerSchema(BaseSchema):
+    passcode = String()
+    passcode_instance = String()

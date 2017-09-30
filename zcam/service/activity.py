@@ -43,7 +43,7 @@ class ActivityService(zcam.app.zmq.ZmqClientApp):
         LOG.info('start activity')
         self.state = ACTIVE
         self.stopwatch.start()
-        self.send_message('{}.start'.format(self.name))
+        self.send_message('{}.start'.format(self.name), value=1)
 
         self.timer = zcam.timer.DynamicTimer(
             interval=self.interval,
@@ -60,6 +60,7 @@ class ActivityService(zcam.app.zmq.ZmqClientApp):
         self.state = COOLDOWN
         duration = self.stopwatch.stop()
         self.send_message('{}.stop'.format(self.name),
+                          value=0,
                           duration=duration.total_seconds())
 
         LOG.debug('cooldown for %d seconds', self.cooldown)
