@@ -31,7 +31,7 @@ class PwmService(zcam.app.zmq.ZmqClientApp):
         self.sub.subscribe('{}.play'.format(self.name))
 
         while True:
-            tag, msg = self.receive_message()
+            topic, msg = self.receive_message()
             if b'tune' in msg:
                 self.play(msg[b'tune'])
 

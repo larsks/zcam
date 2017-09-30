@@ -48,14 +48,20 @@ class ZmqClientApp(ZmqBaseApp):
         self.sub.connect(puburi)
         self.sub.setsockopt(zmq.LINGER, 500)
 
-    def send_message(self, tag, **message):
+    def send_message(self, topic, **message):
+        LOG.debug('%s sending topic %s with content %s',
+                  self.name, topic, message)
         self.pub.send_multipart([
-            bytes(tag, 'utf8'),
+            bytes(topic, 'utf8'),
             msgpack.dumps(message)])
 
     def receive_message(self):
-        msg = self.sub.recv_multipart()
-        return (msg[0], msgpack.loads(msg[1]))
+        topic, message = self.sub.recv_multipart()
+        message = msgpack.loads(message)
+        LOG.info('%s received topic %s with content %s',
+                 self.name, topic, message)
+
+        return (topic, message)
 
     def cleanup(self):
         if self.pub:

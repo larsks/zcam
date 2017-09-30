@@ -91,16 +91,13 @@ class PasscodeService(zcam.app.zmq.ZmqClientApp):
             self.sub.subscribe('zcam.device.keypad')
 
         while True:
-            tag, msg = self.receive_message()
+            topic, msg = self.receive_message()
 
             if msg[b'keycode'] not in KEYMAP:
                 continue
 
             if msg[b'keystate'] != b'up':
                 continue
-
-            LOG.debug('passcode service %s received message %s',
-                      self.name, tag)
 
             key = KEYMAP[msg[b'keycode']]
             keypad = msg[b'instance']

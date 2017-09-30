@@ -29,7 +29,7 @@ class ActivityService(zcam.app.zmq.ZmqClientApp):
         self.sub.subscribe('zcam.sensor.gpio.motion')
 
         while True:
-            tag, msg = self.receive_message()
+            topic, msg = self.receive_message()
 
             if msg[b'fields'][b'value']:
                 if self.state == COOLDOWN:
