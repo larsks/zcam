@@ -58,8 +58,8 @@ class ZmqClientApp(ZmqBaseApp):
     def receive_message(self):
         topic, message = self.sub.recv_multipart()
         message = msgpack.loads(message)
-        LOG.info('%s received topic %s with content %s',
-                 self.name, topic, message)
+        LOG.debug('%s received topic %s with content %s',
+                  self.name, topic, message)
 
         return (topic, message)
 
