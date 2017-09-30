@@ -20,6 +20,8 @@ setup(
             'zcam-service-pwm = zcam.service.pwm:main',
             'zcam-service-button = zcam.service.button:main',
             'zcam-service-activity = zcam.service.activity:main',
+            'zcam-service-heartbeat = zcam.service.heartbeat:main',
+            'zcam-service-led = zcam.service.led:main',
             'zcam-sendmessage = zcam.sendmessage:main',
         ],
     }

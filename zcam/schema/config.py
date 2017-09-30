@@ -73,3 +73,7 @@ class ActivitySchema(BaseSchema):
 
 class MessagesSchema(BaseSchema):
     subscription = List(String)
+
+
+class LedSchema(PinSchema):
+    subscription = String(required=True)
