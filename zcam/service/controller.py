@@ -1,7 +1,11 @@
+import json
 import logging
+from pathlib import Path
+import rpi_pwm
 
 import zcam.app.zmq
 import zcam.schema.config
+import zcam.tunes
 
 LOG = logging.getLogger(__name__)
 
@@ -14,8 +18,41 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
         super().prepare()
         self.passcode = self.config.get('passcode')
         self.passcode_instance = self.config.get('passcode_instance')
+        self.arm_on_start = self.config.get('arm')
+        self.statefile = self.config.get('statefile')
+        if self.statefile:
+            self.statefile = Path(self.statefile).expanduser()
+
         self.armed = False
         self.active = False
+
+        buzzer_pwm = self.config.get('buzzer_pwm')
+        if buzzer_pwm:
+            self.buzzer = rpi_pwm.PWM(*buzzer_pwm.split(':'))
+        else:
+            self.buzzer = None
+
+        self.load_state()
+
+    def load_state(self):
+        if not self.statefile:
+            return
+
+        try:
+            with self.statefile.open('r') as fd:
+                state = json.load(fd)
+                if state.get('armed'):
+                    self.arm_on_start = True
+        except FileNotFoundError:
+            pass
+
+    def save_state(self):
+        if not self.statefile:
+            return
+
+        with self.statefile.open('w') as fd:
+            state = dict(armed=self.armed)
+            json.dump(state, fd)
 
     def main(self):
         self.sub.subscribe('zcam.service.activity')
@@ -29,6 +66,9 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
             LOG.info('listening for all passcodes')
             self.sub.subscribe('zcam.device.passcode')
 
+        if self.arm_on_start:
+            self.arm()
+
         while True:
             topic, msg = self.receive_message()
 
@@ -38,6 +78,16 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
                 self.handle_passcode_attempt(topic, msg)
             elif topic.startswith(b'zcam.sensor.button.btn_arm'):
                 self.handle_arm_button(topic, msg)
+
+    def play(self, tune):
+        if not self.buzzer:
+            return
+
+        tune = getattr(zcam.tunes, 'TUNE_{}'.format(tune.upper()), None)
+        if not tune:
+            return
+
+        self.buzzer.play(tune)
 
     def handle_activity(self, topic, message):
         if not self.armed:
@@ -58,6 +108,7 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
             LOG.info('received correct passcode')
             self.toggle_armed()
         else:
+            self.play('error')
             LOG.error('received incorrect passcode')
 
     def handle_arm_button(self, topic, message):
@@ -74,12 +125,16 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
         if not self.armed:
             self.armed = True
             self.send_message('zcam.arm')
+            self.save_state()
+            self.play('armed')
             LOG.warning('armed')
 
     def disarm(self):
         if self.armed:
             self.armed = False
             self.send_message('zcam.disarm')
+            self.save_state()
+            self.play('disarmed')
             LOG.warning('disarmed')
 
 

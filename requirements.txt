@@ -6,3 +6,4 @@ RPi.gpio
 zmq
 
 git+https://github.com/adafruit/Adafruit_Python_DHT
+git+https://github.com/larsks/python-rpi-pwm
