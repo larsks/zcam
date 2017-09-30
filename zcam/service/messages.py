@@ -7,13 +7,9 @@ import zcam.schema.config
 LOG = logging.getLogger(__name__)
 
 
-class MessagesSchema(zcam.schema.config.BaseSchema):
-    subscription = List(String)
-
-
 class LogMessagesApp(zcam.app.zmq.ZmqClientApp):
     namespace = 'zcam.service.messages'
-    schema = MessagesSchema(strict=True)
+    schema = zcam.schema.config.MessagesSchema(strict=True)
 
     def main(self):
         subscription = next(sub for sub in [self.config.get('subscription'), ['']]

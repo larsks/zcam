@@ -1,6 +1,6 @@
 from marshmallow import Schema, validates_schema, ValidationError
-from marshmallow.fields import String, Integer, Boolean
-from marshmallow.validate import Regexp, OneOf
+from marshmallow.fields import String, Integer, Boolean, List
+from marshmallow.validate import Regexp
 
 
 class BaseSchema(Schema):
@@ -45,7 +45,7 @@ class KeypadSchema(BaseSchema):
 
 
 class PasscodeSchema(BaseSchema):
-    keypad = String()
+    keypad_instance = String()
     timeout = Integer(missing=10)
 
 
@@ -69,3 +69,7 @@ class ActivitySchema(BaseSchema):
     extend = Integer(missing=10)
     limit = Integer(missing=120)
     cooldown = Integer(missing=30)
+
+
+class MessagesSchema(BaseSchema):
+    subscription = List(String)
