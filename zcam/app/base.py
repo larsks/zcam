@@ -45,6 +45,10 @@ class BaseApp(object):
                        action=InstanceSetter(self))
 
         g = p.add_argument_group('Logging options')
+        g.add_argument('--quiet', '-q',
+                       action='store_const',
+                       const='WARNING',
+                       dest='loglevel')
         g.add_argument('--verbose', '-v',
                        action='store_const',
                        const='INFO',
@@ -70,7 +74,7 @@ class BaseApp(object):
             else:
                 g.add_argument('--{}'.format(fieldname.replace('_', '-')))
 
-        p.set_defaults(loglevel='WARNING')
+        p.set_defaults(loglevel='INFO')
 
         return p
 
@@ -126,6 +130,7 @@ class BaseApp(object):
             self.read_config()
             self.validate_config()
 
+            LOG.info('starting %s', self.name)
             self.prepare()
             self.main()
         except KeyboardInterrupt:
