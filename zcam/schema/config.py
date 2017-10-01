@@ -86,3 +86,5 @@ class ControllerSchema(BaseSchema):
     arm = Boolean(missing=False)
     statefile = String()
     buzzer_pwm = String(missing='pwmchip0:0')
+    arm_hotkey = String(
+        validate=Regexp('([^:]+:)?KEY_.*'))

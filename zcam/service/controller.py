@@ -32,6 +32,18 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
         else:
             self.buzzer = None
 
+        arm_hotkey = self.config.get('arm_hotkey')
+        if arm_hotkey:
+            try:
+                keypad, key = arm_hotkey.split(':', 1)
+            except ValueError:
+                keypad = '*'
+                key = arm_hotkey
+
+            self.arm_hotkey = (keypad, key)
+        else:
+            self.arm_hotkey = None
+
         self.load_state()
 
     def load_state(self):
@@ -66,6 +78,18 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
             LOG.info('listening for all passcodes')
             self.sub.subscribe('zcam.device.passcode')
 
+        if self.arm_hotkey:
+            keypad, key = self.arm_hotkey
+
+            if keypad == '*':
+                LOG.info('listening for hotkey %s from all keypads',
+                         key)
+                self.sub.subscribe('zcam.device.keypad')
+            else:
+                LOG.info('listening for hotkey %s from keypad %s',
+                         key, keypad)
+                self.sub.subscribe('zcam.device.keypad.{}'.format(keypad))
+
         if self.arm_on_start:
             self.arm()
 
@@ -78,6 +102,14 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
                 self.handle_passcode_attempt(topic, msg)
             elif topic.startswith(b'zcam.sensor.button.btn_arm'):
                 self.handle_arm_button(topic, msg)
+            elif topic.startswith(b'zcam.device.keypad'):
+                self.handle_hotkey(topic, msg)
+
+    def handle_hotkey(self, topic, msg):
+        keypad, key = self.arm_hotkey
+        if ((keypad == '*' or msg[b'keypad'] == keypad) and
+                msg[b'keycode'].decode('utf8') == key):
+            self.arm()
 
     def play(self, tune):
         if not self.buzzer:
