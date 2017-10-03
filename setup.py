@@ -11,6 +11,7 @@ setup(
         'console_scripts': [
             'zcam-service-activity = zcam.service.activity:main',
             'zcam-service-button = zcam.service.button:main',
+            'zcam-service-camera = zcam.service.camera:main',
             'zcam-service-controller = zcam.service.controller:main',
             'zcam-service-dht = zcam.service.dht:main',
             'zcam-service-gpio = zcam.service.gpio:main',

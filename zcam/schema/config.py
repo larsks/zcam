@@ -13,10 +13,6 @@ class BaseSchema(Schema):
     loglevels = List(String())
 
 
-class PathSchema(BaseSchema):
-    datadir = String(missing='.')
-
-
 class PinSchema(BaseSchema):
     pin = Integer(required=True)
 
@@ -56,15 +52,6 @@ class MetricsSchema(BaseSchema):
     database = String(required=True)
 
 
-class CameraSchema(PathSchema):
-    res_x = Integer(missing=800)
-    res_y = Integer(missing=600)
-    flip_x = Boolean(missing=False)
-    flip_y = Boolean(missing=False)
-    lead_time = Integer(missing=5)
-    interval = Integer(missing=2)
-
-
 class ActivitySchema(BaseSchema):
     interval = Integer(missing=10)
     extend = Integer(missing=10)
@@ -88,3 +75,17 @@ class ControllerSchema(BaseSchema):
     buzzer_pwm = String(missing='pwmchip0:0')
     arm_hotkey = String(
         validate=Regexp('([^:]+:)?KEY_.*'))
+
+
+class PathSchema(BaseSchema):
+    datadir = String(missing='.')
+
+
+class CameraSchema(PathSchema):
+    res_x = Integer(missing=800)
+    res_y = Integer(missing=600)
+    framerate = Integer(missing=30)
+    flip_x = Boolean(missing=False)
+    flip_y = Boolean(missing=False)
+    lead_time = Integer(missing=5)
+    interval = Integer(missing=2)

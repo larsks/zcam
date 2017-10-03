@@ -127,9 +127,11 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
 
         if message[b'value'] and not self.active:
             LOG.info('start recording activity')
+            self.send_message('zcam.activity.start', value=1)
             self.active = True
         elif self.active:
             LOG.info('stop recording activity')
+            self.send_message('zcam.activity.start', value=0)
             self.active = False
 
     def handle_passcode_attempt(self, topic, message):
@@ -156,7 +158,7 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
     def arm(self):
         if not self.armed:
             self.armed = True
-            self.send_message('zcam.arm')
+            self.send_message('zcam.arm.armed', value=1)
             self.save_state()
             self.play('armed')
             LOG.warning('armed')
@@ -164,7 +166,7 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
     def disarm(self):
         if self.armed:
             self.armed = False
-            self.send_message('zcam.disarm')
+            self.send_message('zcam.arm.disarmed', value=0)
             self.save_state()
             self.play('disarmed')
             LOG.warning('disarmed')

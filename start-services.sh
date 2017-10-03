@@ -6,18 +6,29 @@ if [ -z "$1" ]; then
 	exec screen -c screenrc $0 "start"
 fi
 
-screen -t proxy       zcam-service-proxy -f zcam.conf                     --debug
-screen -t led         zcam-service-led -f zcam.conf --instance heartbeat  --debug
+set -x
+exec 2> log
 
-screen -t motion      zcam-service-gpio --instance motion -f zcam.conf    --debug
-screen -t door        zcam-service-gpio --instance door -f zcam.conf      --debug
-screen -t btn_arm     zcam-service-button --instance btn_arm -f zcam.conf --debug
-screen -t dht         zcam-service-dht -f zcam.conf                       --debug
-screen -t keypad      zcam-service-keypad -f zcam.conf                    --debug
-screen -t passcode    zcam-service-passcode -f zcam.conf                  --debug
-screen -t activity    zcam-service-activity -f zcam.conf                  --debug
+rpi() {
+	uname -m | grep -q arm7
+}
 
-screen -t metrics     zcam-service-metrics -f zcam.conf                   --debug
-screen -t messages    zcam-service-messages -f zcam.conf                  --debug
-screen -t controller  zcam-service-controller -f zcam.conf                --debug
-screen -t heartbeat   zcam-service-heartbeat -f zcam.conf                 --debug
+service() {
+	cmd=$1
+	shift
+	echo "$cmd --debug -f zcam.conf $*; sleep inf"
+}
+
+screen -t proxy  sh -c "$(service zcam-service-proxy)"
+rpi && screen -t led sh -c "$(service zcam-service-led --instance heartbeat)"
+rpi && screen -t motion sh -c "$(service zcam-service-gpio --instance motion)"
+rpi && screen -t door sh -c "$(service zcam-service-gpio --instance door)"
+rpi && screen -t door sh -c "$(service zcam-service-button --instance btn_arm)"
+rpi && screen -t dht sh -c "$(service zcam-service-dht)"
+rpi && screen -t camera sh -c "$(service zcam-service-camera)"
+screen -t keypad sh -c "$(service zcam-service-keypad)"
+screen -t passcode sh -c "$(service zcam-service-passcode)"
+screen -t activity sh -c "$(service zcam-service-activity)"
+screen -t metrics sh -c "$(service zcam-service-metrics)"
+screen -t controller sh -c "$(service zcam-service-controller)"
+screen -t heatbeat sh -c "$(service zcam-service-heatbeat)"
