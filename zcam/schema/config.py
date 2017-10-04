@@ -100,5 +100,5 @@ class CameraSchema(PathSchema):
         missing='tcp://*:7711',
         validate=Regexp('^tcp://[^:]+:\d+'))
     image_bind_uri = String(
-        missing='tcp://*:7711',
+        missing='tcp://*:7712',
         validate=Regexp('^tcp://[^:]+:\d+'))

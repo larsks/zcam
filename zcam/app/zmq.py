@@ -13,6 +13,12 @@ class ZmqBaseApp(BaseApp):
         super().__init__(*args, **kwargs)
 
         self.ctx = None
+        self.sockets = []
+
+    def socket(self, *args, **kwargs):
+        sock = self.ctx.socket(*args, **kwargs)
+        self.sockets.append(sock)
+        return sock
 
     def prepare(self):
         self.create_context()
@@ -22,6 +28,10 @@ class ZmqBaseApp(BaseApp):
         self.ctx = zmq.Context()
 
     def cleanup(self):
+        LOG.debug('closing sockets')
+        for sock in self.sockets:
+            sock.close()
+
         if self.ctx:
             self.ctx.term()
         super().cleanup()
@@ -40,11 +50,11 @@ class ZmqClientApp(ZmqBaseApp):
         LOG.info('publishing events on %s', suburi)
         LOG.info('collecting events on %s', puburi)
 
-        self.pub = self.ctx.socket(zmq.PUB)
+        self.pub = self.socket(zmq.PUB)
         self.pub.connect(suburi)
         self.pub.setsockopt(zmq.LINGER, 500)
 
-        self.sub = self.ctx.socket(zmq.SUB)
+        self.sub = self.socket(zmq.SUB)
         self.sub.connect(puburi)
         self.sub.setsockopt(zmq.LINGER, 500)
 
@@ -62,10 +72,3 @@ class ZmqClientApp(ZmqBaseApp):
                   self.name, topic, message)
 
         return (topic, message)
-
-    def cleanup(self):
-        if self.pub:
-            self.pub.close()
-        if self.sub:
-            self.sub.close()
-        super().cleanup()

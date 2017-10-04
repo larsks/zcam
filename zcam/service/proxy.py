@@ -26,20 +26,13 @@ class ProxyApp(zcam.app.zmq.ZmqBaseApp):
         LOG.info('publishing messages on %s', puburi)
         LOG.info('collecting messages on %s', suburi)
 
-        self.pub = self.ctx.socket(zmq.XPUB)
+        self.pub = self.socket(zmq.XPUB)
         self.pub.bind(puburi)
         self.pub.setsockopt(zmq.LINGER, 500)
 
-        self.sub = self.ctx.socket(zmq.XSUB)
+        self.sub = self.socket(zmq.XSUB)
         self.sub.bind(suburi)
         self.sub.setsockopt(zmq.LINGER, 500)
-
-    def cleanup(self):
-        if self.pub:
-            self.pub.close()
-        if self.sub:
-            self.sub.close()
-        super().cleanup()
 
 
 def main():

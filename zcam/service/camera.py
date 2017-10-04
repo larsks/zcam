@@ -21,7 +21,6 @@ class Writer(object):
 class CameraService(zcam.app.zmq.ZmqClientApp):
     namespace = 'zcam.service.camera'
     schema = zcam.schema.config.CameraSchema(strict=True)
-    eventmessage = zcam.schema.messages.EventMessage(strict=True)
 
     def prepare(self):
         super().prepare()
@@ -43,19 +42,29 @@ class CameraService(zcam.app.zmq.ZmqClientApp):
         self.image = self.socket(zmq.PUB)
 
     def main(self):
+        LOG.info('publishing hires video on {hires_bind_uri}'.format(
+            **self.config))
+        LOG.info('publishing lores video on {lores_bind_uri}'.format(
+            **self.config))
+        LOG.info('publishing image video on {image_bind_uri}'.format(
+            **self.config))
+
         self.hires.bind(self.config['hires_bind_uri'])
         self.lores.bind(self.config['lores_bind_uri'])
         self.image.bind(self.config['image_bind_uri'])
 
         self.camera.start_recording(Writer(self.hires),
-                                    format='h264')
+                                    format='h264',
+                                    splitter_port=1)
         self.camera.start_recording(Writer(self.lores),
                                     format='h264',
                                     splitter_port=2,
                                     resize=(self.res_lo_x, self.res_lo_y))
 
         for x in self.camera.capture_continuous(Writer(self.image),
-                                                use_video_port=True):
+                                                format='jpeg',
+                                                use_video_port=True,
+                                                splitter_port=0):
             time.sleep(self.image_interval)
 
 
