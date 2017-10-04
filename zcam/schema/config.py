@@ -82,10 +82,23 @@ class PathSchema(BaseSchema):
 
 
 class CameraSchema(PathSchema):
-    res_x = Integer(missing=800)
-    res_y = Integer(missing=600)
+    res_hi_x = Integer(missing=800)
+    res_hi_y = Integer(missing=600)
+    res_lo_x = Integer(missing=320)
+    res_lo_y = Integer(missing=240)
+    res_image_x = Integer(missing=800)
+    res_image_y = Integer(missing=600)
     framerate = Integer(missing=30)
     flip_x = Boolean(missing=False)
     flip_y = Boolean(missing=False)
-    lead_time = Integer(missing=5)
-    interval = Integer(missing=2)
+    image_interval = Integer(missing=2)
+
+    hires_bind_uri = String(
+        missing='tcp://*:7710',
+        validate=Regexp('^tcp://[^:]+:\d+'))
+    lores_bind_uri = String(
+        missing='tcp://*:7711',
+        validate=Regexp('^tcp://[^:]+:\d+'))
+    image_bind_uri = String(
+        missing='tcp://*:7711',
+        validate=Regexp('^tcp://[^:]+:\d+'))

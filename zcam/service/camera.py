@@ -1,35 +1,21 @@
-import datetime
-import json
 import logging
-from pathlib import Path
 import picamera
+import time
+import zmq
 
 import zcam.app.zmq
 import zcam.schema.config
-import zcam.schema.messages
 
 LOG = logging.getLogger(__name__)
 
 
-class Event(object):
+class Writer(object):
 
-    def __init__(self, datadir, eventtime=None):
-        if eventtime is None:
-            eventtime = datetime.datetime.now()
+    def __init__(self, sock):
+        self.sock = sock
 
-        self.datadir = Path(datadir)
-        self.eventtime = eventtime
-        self.eventdir = (
-            self.datadir / 'events' /
-            eventtime.strftime('%y-%m-%d') /
-            eventtime.strftime('%H:%M:%S')
-        )
-
-        def __str__(self):
-            return str(self.eventtime)
-
-    def end(self):
-        self.duration = datetime.datetime.now() - self.eventtime
+    def write(self, data):
+        self.sock.send(data)
 
 
 class CameraService(zcam.app.zmq.ZmqClientApp):
@@ -40,75 +26,37 @@ class CameraService(zcam.app.zmq.ZmqClientApp):
     def prepare(self):
         super().prepare()
         self.camera = picamera.PiCamera(
-            resolution=(self.config['res_x'], self.config['res_y']),
+            resolution=(self.config['res_hi_x'], self.config['res_hi_y']),
             framerate=self.config['framerate'],
         )
 
         self.camera.hflip = self.config['flip_x']
         self.camera.vflip = self.config['flip_y']
-        self.interval = self.config['interval']
-        self.lead_time = self.config['lead_time']
-        self.datadir = Path(self.config['datadir'])
-        self.recording = False
+        self.res_lo_x = self.config['res_lo_x']
+        self.res_lo_y = self.config['res_lo_y']
+        self.res_image_x = self.config['res_image_x']
+        self.res_image_y = self.config['res_image_y']
+        self.image_interval = self.config['image_interval']
 
-        self.stream = picamera.PiCameraCircularIO(
-            self.camera, seconds=self.lead_time)
+        self.hires = self.socket(zmq.PUB)
+        self.lores = self.socket(zmq.PUB)
+        self.image = self.socket(zmq.PUB)
 
     def main(self):
-        self.sub.subscribe('zcam.activity')
-        self.camera.start_recording(self.stream, format='h264')
+        self.hires.bind(self.config['hires_bind_uri'])
+        self.lores.bind(self.config['lores_bind_uri'])
+        self.image.bind(self.config['image_bind_uri'])
 
-        while True:
-            topic, msg = self.receive_message()
+        self.camera.start_recording(Writer(self.hires),
+                                    format='h264')
+        self.camera.start_recording(Writer(self.lores),
+                                    format='h264',
+                                    splitter_port=2,
+                                    resize=(self.res_lo_x, self.res_lo_y))
 
-            if topic == b'zcam.activity.start':
-                self.start_event()
-            elif topic == b'zcam.activity.stop':
-                self.stop_event()
-            else:
-                LOG.error('received unexpected message %s', topic)
-
-    def cleanup(self):
-        self.camera.stop_recording()
-        super().cleanup()
-
-    def start_event(self):
-        if self.recording:
-            LOG.error('request to record when already recording')
-            return
-
-        self.event = Event(self.datadir)
-        videopath = self.event.eventdir / 'video.h264'
-        self.event.eventdir.mkdir(parents=True, exist_ok=True)
-        event, errors = self.eventmessage.dump(self.event)
-
-        LOG.info('start recording event %s', self.event)
-        self.recording = True
-        self.vidfd = videopath.open('wb')
-        self.stream.copy_to(self.vidfd)
-        self.camera.split_recording(self.vidfd)
-        self.send_message('{}.recording.start'.format(self.name),
-                          event=event)
-
-    def stop_event(self):
-        if not self.recording:
-            LOG.error('request to stop recording when not recording')
-            return
-
-        LOG.info('stop recording event %s', self.event)
-        self.recording = False
-        self.stream.seek(0)
-        self.stream.truncate()
-        self.camera.split_recording(self.stream)
-        self.vidfd.close()
-
-        self.event.end()
-        event, errors = self.eventmessage.dump(self.event)
-        with (self.event.eventdir / 'event.json').open('w') as fd:
-            json.dump(event, fd, indent=2)
-
-        self.send_message('{}.recording.stop'.format(self.name),
-                          event=event)
+        for x in self.camera.capture_continuous(Writer(self.image),
+                                                use_video_port=True):
+            time.sleep(self.image_interval)
 
 
 def main():
