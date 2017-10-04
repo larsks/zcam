@@ -81,7 +81,7 @@ class PathSchema(BaseSchema):
     datadir = String(missing='.')
 
 
-class CameraSchema(PathSchema):
+class CameraSchema(BaseSchema):
     res_hi_x = Integer(missing=800)
     res_hi_y = Integer(missing=600)
     res_lo_x = Integer(missing=320)
@@ -102,3 +102,17 @@ class CameraSchema(PathSchema):
     image_bind_uri = String(
         missing='tcp://*:7712',
         validate=Regexp('^tcp://[^:]+:\d+'))
+
+
+class RecordSchema(PathSchema):
+    hires_connect_uri = String(
+        missing='tcp://localhost:7710',
+        validate=Regexp('^tcp://[^:]+:\d+'))
+    lores_connect_uri = String(
+        missing='tcp://localhost:7711',
+        validate=Regexp('^tcp://[^:]+:\d+'))
+    image_connect_uri = String(
+        missing='tcp://localhost:7712',
+        validate=Regexp('^tcp://[^:]+:\d+'))
+
+    framebuffer = Integer(missing=30)

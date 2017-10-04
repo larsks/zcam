@@ -23,6 +23,7 @@ setup(
             'zcam-service-motion = zcam.service.motion:main',
             'zcam-service-passcode = zcam.service.passcode:main',
             'zcam-service-proxy = zcam.service.proxy:main',
+            'zcam-service-record = zcam.service.record:main',
             'zcam-sendmessage = zcam.sendmessage:main',
         ],
     }
