@@ -31,7 +31,7 @@ class ActivityService(zcam.app.zmq.ZmqClientApp):
         while True:
             topic, msg = self.receive_message()
 
-            if msg[b'fields'][b'value']:
+            if msg[b'value']:
                 if self.state == COOLDOWN:
                     LOG.info('ignoring motion during cooldown')
                 elif self.state == IDLE:
