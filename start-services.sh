@@ -10,7 +10,7 @@ set -x
 exec 2> log
 
 rpi() {
-	uname -m | grep -q arm7
+	uname -m | grep -q armv7
 }
 
 service() {
@@ -31,4 +31,4 @@ screen -t passcode sh -c "$(service zcam-service-passcode)"
 screen -t activity sh -c "$(service zcam-service-activity)"
 screen -t metrics sh -c "$(service zcam-service-metrics)"
 screen -t controller sh -c "$(service zcam-service-controller)"
-screen -t heatbeat sh -c "$(service zcam-service-heatbeat)"
+screen -t heartbeat sh -c "$(service zcam-service-heartbeat)"
