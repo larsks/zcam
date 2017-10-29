@@ -5,6 +5,7 @@ import rpi_pwm
 
 import zcam.app.zmq
 import zcam.schema.config
+import zcam.timer
 import zcam.tunes
 
 LOG = logging.getLogger(__name__)
@@ -25,6 +26,7 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
 
         self.armed = False
         self.active = False
+        self.arm_timer = None
 
         buzzer_pwm = self.config.get('buzzer_pwm')
         if buzzer_pwm:
@@ -109,9 +111,9 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
         keypad, key = self.arm_hotkey
         if ((keypad == '*' or msg[b'keypad'] == keypad) and
                 msg[b'keycode'].decode('utf8') == key):
-            self.arm()
+            self.arm_soon()
 
-    def play(self, tune):
+    def play(self, tune, wait=False):
         if not self.buzzer:
             return
 
@@ -119,7 +121,7 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
         if not tune:
             return
 
-        self.buzzer.play(tune)
+        self.buzzer.play(tune, wait=wait)
 
     def handle_activity(self, topic, message):
         if not self.armed:
@@ -153,11 +155,20 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
         if self.armed:
             self.disarm()
         else:
-            self.arm()
+            self.arm_soon()
+
+    def arm_soon(self):
+        self.arm_timer = zcam.timer.TickingTimer(
+            1, self.play,
+            5, self.arm,
+            tick_args=['beep'],
+        )
+        self.arm_timer.start()
 
     def arm(self):
         if not self.armed:
             self.armed = True
+            self.arm_timer = None
             self.send_message('zcam.arm.armed', value=1)
             self.save_state()
             self.play('armed')
