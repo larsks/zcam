@@ -111,7 +111,10 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
         keypad, key = self.arm_hotkey
         if ((keypad == '*' or msg[b'keypad'] == keypad) and
                 msg[b'keycode'].decode('utf8') == key):
-            self.arm_soon()
+            if self.armed:
+                self.play('error')
+            else:
+                self.arm_soon()
 
     def play(self, tune, wait=False):
         if not self.buzzer:
