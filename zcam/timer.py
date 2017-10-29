@@ -38,15 +38,20 @@ class TickingTimer(threading.Thread):
         self.stopflag.set()
 
     def run(self):
+        LOG.debug('start ticking, tick=%f, wait=%f',
+                  self.tick_interval, self.wait_interval)
+
         time_start = time.time()
         while True:
-            now = time.time()
-            delta = now - time_start
+            delta = time.time() - time_start
             if delta >= self.wait_interval:
                 break
 
             self.tick_callback(*self.tick_args, **self.tick_kwargs)
+
+            delta = time.time() - time_start
             sleeptime = min((self.wait_interval - delta), self.tick_interval)
+            LOG.debug('tick! delta=%f, sleeptime=%f', delta, sleeptime)
             if self.stopflag.wait(sleeptime):
                 return
 
