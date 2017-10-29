@@ -71,6 +71,7 @@ class ControllerSchema(BaseSchema):
     passcode = String()
     passcode_instance = String()
     arm = Boolean(missing=False)
+    mute = Boolean(missing=False)
     statefile = String()
     buzzer_pwm = String(missing='pwmchip0:0')
     arm_hotkey = String(

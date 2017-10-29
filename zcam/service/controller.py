@@ -117,6 +117,10 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
         if not self.buzzer:
             return
 
+        if self.args.mute:
+            LOG.debug('not playing %s (muted)', tune)
+            return
+
         tune = getattr(zcam.tunes, 'TUNE_{}'.format(tune.upper()), None)
         if not tune:
             return
