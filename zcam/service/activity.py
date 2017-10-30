@@ -27,17 +27,29 @@ class ActivityService(zcam.app.zmq.ZmqClientApp):
 
     def main(self):
         self.sub.subscribe('zcam.sensor.gpio.motion')
+        self.sub.subscribe('zcam.arm')
 
+        state = 0
         while True:
             topic, msg = self.receive_message()
 
-            if msg[b'value']:
-                if self.state == COOLDOWN:
-                    LOG.info('ignoring motion during cooldown')
-                elif self.state == IDLE:
-                    self.start_active()
-                elif self.state == ACTIVE:
-                    self.continue_active()
+            if topic.startswith(b'zcam.arm'):
+                if msg[b'value']:
+                    state = 1
+                else:
+                    state = 0
+
+            if not state:
+                continue
+
+            if topic.startswith(b'zcam.sensor.gpio.motion'):
+                if msg[b'value']:
+                    if self.state == COOLDOWN:
+                        LOG.info('ignoring motion during cooldown')
+                    elif self.state == IDLE:
+                        self.start_active()
+                    elif self.state == ACTIVE:
+                        self.continue_active()
 
     def start_active(self):
         LOG.info('start activity')
