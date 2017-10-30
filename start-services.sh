@@ -20,7 +20,8 @@ service() {
 }
 
 screen -t proxy  sh -c "$(service zcam-service-proxy)"
-rpi && screen -t led sh -c "$(service zcam-service-led --instance heartbeat)"
+rpi && screen -t led_heartbeat sh -c "$(service zcam-service-led --instance heartbeat)"
+rpi && screen -t led_arm sh -c "$(service zcam-service-led --instance arm)"
 rpi && screen -t motion sh -c "$(service zcam-service-gpio --instance motion)"
 rpi && screen -t btn_arm sh -c "$(service zcam-service-button --instance btn_arm)"
 rpi && screen -t dht sh -c "$(service zcam-service-dht)"
