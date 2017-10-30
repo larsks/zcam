@@ -67,9 +67,11 @@ class BaseApp(object):
             elif isinstance(fieldspec, marshmallow.fields.Boolean):
                 g.add_argument('--{}'.format(fieldname.replace('_', '-')),
                                action='store_true',
+                               default=None,
                                dest=fieldname)
                 g.add_argument('--no-{}'.format(fieldname.replace('_', '-')),
                                action='store_false',
+                               default=None,
                                dest=fieldname)
             else:
                 g.add_argument('--{}'.format(fieldname.replace('_', '-')))
