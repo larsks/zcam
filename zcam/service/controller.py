@@ -110,7 +110,8 @@ class ControllerService(zcam.app.zmq.ZmqClientApp):
     def handle_hotkey(self, topic, msg):
         keypad, key = self.arm_hotkey
         if ((keypad == '*' or msg[b'keypad'] == keypad) and
-                msg[b'keycode'].decode('utf8') == key):
+                msg[b'keycode'].decode('utf8') == key and
+                msg[b'keystate'] == b'up'):
             if self.armed:
                 self.play('error')
             else:
